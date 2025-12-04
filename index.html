@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="PWA приложение для отслеживания отношений и памятных моментов">
+    <meta name="theme-color" content="#2196F3">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Наша История">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%232196F3' width='192' height='192'/><text x='96' y='120' font-size='120' fill='white' text-anchor='middle' font-weight='bold'>💕</text></svg>">
+    <link rel="manifest" href="data:application/json,{
+        'name': 'Наша История',
+        'short_name': 'История',
+        'description': 'Совместное приложение для пары',
+        'start_url': '/',
+        'display': 'standalone',
+        'background_color': '#ffffff',
+        'theme_color': '#2196F3',
+        'icons': [
+            {'src': 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 192 192%22><rect fill=%22%232196F3%22 width=%22192%22 height=%22192%22/><text x=%2296%22 y=%22120%22 font-size=%22120%22 fill=%22white%22 text-anchor=%22middle%22 font-weight=%22bold%22>💕</text></svg>', 'sizes': '192x192', 'type': 'image/svg+xml', 'purpose': 'any'},
+            {'src': 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 512 512%22><rect fill=%22%232196F3%22 width=%22512%22 height=%22512%22/><text x=%22256%22 y=%22320%22 font-size=%22320%22 fill=%22white%22 text-anchor=%22middle%22 font-weight=%22bold%22>💕</text></svg>', 'sizes': '512x512', 'type': 'image/svg+xml', 'purpose': 'any'}
+        ]
+    }">
+    <title>Наша История</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #f0f4f8 0%, #e8f1f7 100%);
+            color: #1a1a1a;
+            overflow-x: hidden;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* SIDEBAR (ДЕСКТОП) */
+        .sidebar {
+            display: none;
+            width: 280px;
+            background: white;
+            border-right: 1px solid #d0dce7;
+            padding: 20px;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            box-shadow: 2px 0 10px rgba(33, 150, 243, 0.1);
+        }
+
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 30px;
+            font-size: 24px;
+            font-weight: 600;
+            color: #2196F3;
+        }
+
+        .sidebar-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .nav-item {
+            padding: 12px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            color: #666;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+        }
+
+        .nav-item:hover {
+            background: #f0f4f8;
+            color: #2196F3;
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, rgba(33, 150, 243, 0.1), rgba(33, 150, 243, 0.05));
+            color: #2196F3;
+            border-left: 3px solid #2196F3;
+            padding-left: 13px;
+        }
+
+        /* MAIN CONTENT */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .screen {
+            display: none;
+            padding: 20px;
+            flex: 1;
+            overflow-y: auto;
+            padding-bottom: 80px;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @media (min-width: 1024px) {
+            .sidebar {
+                display: block;
+            }
+            .main-content {
+                margin-left: 280px;
+            }
+            .screen {
+                padding-bottom: 20px;
+            }
+            .bottom-nav {
+                display: none !important;
+            }
+        }
+
+        /* HEADER */
+        .screen-header {
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #e8d5ce;
+        }
+
+        .screen-header h1 {
+            font-size: 28px;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+        }
+
+        .screen-header p {
+            font-size: 14px;
+            color: #999;
+        }
+
+        /* GRID CARDS */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(33, 150, 243, 0.08);
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid #e3f2fd;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(33, 150, 243, 0.15);
+        }
+
+        .card-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #2196F3;
+            margin-bottom: 8px;
+        }
+
+        .card-label {
+            font-size: 12px;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* CIRCULAR PROGRESS */
+        .progress-circle {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            background: conic-gradient(#2196F3 0deg, #2196F3 var(--progress), #e3f2fd var(--progress));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+            position: relative;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .progress-circle::after {
+            content: '';
+            width: 130px;
+            height: 130px;
+            border-radius: 50%;
+            background: white;
+            position: absolute;
+        }
+
+        .progress-text {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+        }
+
+        .progress-text .number {
+            font-size: 28px;
+            font-weight: 700;
+            color: #2196F3;
+        }
+
+        .progress-text .label {
+            font-size: 11px;
+            color: #999;
+        }
+
+        /* CHAT STYLES */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 140px);
+            max-height: 600px;
+        }
+
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .message {
+            display: flex;
+            max-width: 80%;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.sent {
+            justify-content: flex-end;
+            margin-left: auto;
+        }
+
+        .message-bubble {
+            padding: 12px 16px;
+            border-radius: 18px;
+            font-size: 14px;
+            word-wrap: break-word;
+        }
+
+        .message.sent .message-bubble {
+            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.received .message-bubble {
+            background: #e3f2fd;
+            color: #1a1a1a;
+            border-bottom-left-radius: 4px;
+        }
+
+        .message-time {
+            font-size: 11px;
+            color: #ccc;
+            margin-top: 4px;
+            padding: 0 8px;
+        }
+
+        .chat-input-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #d0dce7;
+            border-radius: 20px;
+            font-size: 14px;
+            background: white;
+            outline: none;
+            transition: border 0.3s ease;
+        }
+
+        .chat-input:focus {
+            border-color: #2196F3;
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+        }
+
+        .send-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+            border: none;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .send-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .send-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* WALL (CANVAS) */
+        #drawingCanvas {
+            border: 2px solid #d0dce7;
+            border-radius: 12px;
+            background: white;
+            cursor: crosshair;
+            display: block;
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.1);
+            touch-action: none;
+        }
+
+        .canvas-controls {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .color-picker {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            border: 2px solid #d0dce7;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .color-picker:hover {
+            transform: scale(1.1);
+        }
+
+        .control-btn {
+            padding: 8px 16px;
+            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: transform 0.2s ease;
+        }
+
+        .control-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        /* POSTCARDS */
+        .postcards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .postcard {
+            position: relative;
+            width: 140px;
+            height: 180px;
+            background: white;
+            border-radius: 4px;
+            box-shadow: 2px 4px 12px rgba(232, 165, 179, 0.15);
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            transform: rotate(var(--rotate, -2deg));
+        }
+
+        .postcard:hover {
+            transform: rotate(0deg) scale(1.05);
+        }
+
+        .postcard img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .postcard-placeholder {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(232, 165, 179, 0.1), rgba(240, 168, 179, 0.05));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        /* BUTTONS */
+        .btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(33, 150, 243, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: #e3f2fd;
+            color: #2196F3;
+        }
+
+        /* INPUT */
+        input[type="date"],
+        input[type="text"],
+        textarea {
+            padding: 12px;
+            border: 1px solid #d0dce7;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 14px;
+            outline: none;
+            transition: border 0.3s ease;
+        }
+
+        input[type="date"]:focus,
+        input[type="text"]:focus,
+        textarea:focus {
+            border-color: #2196F3;
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        /* BOTTOM NAVIGATION */
+        .bottom-nav {
+            display: flex;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid #d0dce7;
+            box-shadow: 0 -2px 10px rgba(33, 150, 243, 0.1);
+            z-index: 1000;
+            height: 70px;
+        }
+
+        .nav-tab {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            cursor: pointer;
+            color: #999;
+            transition: color 0.3s ease;
+            border: none;
+            background: none;
+            font-size: 12px;
+        }
+
+        .nav-tab:hover {
+            color: #2196F3;
+        }
+
+        .nav-tab.active {
+            color: #2196F3;
+        }
+
+        .nav-tab-icon {
+            font-size: 20px;
+        }
+
+        /* GOALS SECTION */
+        .goals-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .goal-item {
+            background: white;
+            padding: 16px;
+            border-radius: 8px;
+            border-left: 4px solid #2196F3;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .goal-info h3 {
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+
+        .goal-date {
+            font-size: 13px;
+            color: #999;
+        }
+
+        .goal-status {
+            font-size: 24px;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .cards-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .postcards-grid {
+                grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+            }
+        }
+
+        /* LOADING & ANIMATIONS */
+        .fade-in {
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* SCROLLBAR */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #2196F3;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #1976D2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- SIDEBAR (DESKTOP ONLY) -->
+        <nav class="sidebar">
+            <div class="sidebar-header">💕 История</div>
+            <div class="sidebar-nav">
+                <button class="nav-item active" onclick="switchScreen('home')">📊 Главная</button>
+                <button class="nav-item" onclick="switchScreen('chat')">💬 Чат</button>
+                <button class="nav-item" onclick="switchScreen('wall')">🎨 Стена</button>
+                <button class="nav-item" onclick="switchScreen('postcards')">📮 Открытки</button>
+                <button class="nav-item" onclick="switchScreen('goals')">🎯 Цели</button>
+                <button class="nav-item" onclick="switchScreen('settings')">⚙️ Настройки</button>
+            </div>
+        </nav>
+
+        <!-- MAIN CONTENT -->
+        <div class="main-content">
+            <!-- HOME SCREEN -->
+            <div class="screen active" id="home">
+                <div class="screen-header">
+                    <h1>💕 Наша История</h1>
+                    <p>Вместе уже <strong id="daysTogetherDisplay">0</strong> дней</p>
+                </div>
+
+                <div class="cards-grid">
+                    <div class="card">
+                        <div class="card-value" id="daysDisplay">0</div>
+                        <div class="card-label">Дней вместе</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-value" id="hoursDisplay">0</div>
+                        <div class="card-label">Часов</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-value" id="minutesDisplay">0</div>
+                        <div class="card-label">Минут</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-value" id="secondsDisplay">0</div>
+                        <div class="card-label">Секунд</div>
+                    </div>
+                </div>
+
+                <h2 style="font-size: 18px; margin: 24px 0 16px; color: #1a1a1a;">До следующего дня рождения</h2>
+                <div class="cards-grid">
+                    <div class="card">
+                        <div class="progress-circle" style="--progress: var(--person1-progress, 45deg);">
+                            <div class="progress-text">
+                                <div class="number" id="daysToP1">150</div>
+                                <div class="label">дней</div>
+                            </div>
+                        </div>
+                        <div class="card-label" id="person1NameDisplay">Сурикат</div>
+                    </div>
+                    <div class="card">
+                        <div class="progress-circle" style="--progress: var(--person2-progress, 90deg);">
+                            <div class="progress-text">
+                                <div class="number" id="daysToP2">75</div>
+                                <div class="label">дней</div>
+                            </div>
+                        </div>
+                        <div class="card-label" id="person2NameDisplay">Кот</div>
+                    </div>
+                </div>
+
+                <h2 style="font-size: 18px; margin: 24px 0 16px; color: #1a1a1a;">Важные даты</h2>
+                <div style="margin-bottom: 20px; display: flex; flex-direction: column; gap: 12px;">
+                    <input type="text" placeholder="Название события" id="importantDateName" style="padding: 12px; border: 1px solid #d0dce7; border-radius: 8px; font-size: 14px;">
+                    <input type="date" id="importantDateInput" style="padding: 12px; border: 1px solid #d0dce7; border-radius: 8px; font-size: 14px;">
+                    <select id="importantDateIcon" style="padding: 12px; border: 1px solid #d0dce7; border-radius: 8px; font-size: 14px;">
+                        <option value="📅">📅 Дата</option>
+                        <option value="🎂">🎂 День рождения</option>
+                        <option value="💍">💍 Годовщина</option>
+                        <option value="🎉">🎉 Праздник</option>
+                        <option value="✈️">✈️ Поездка</option>
+                        <option value="🎫">🎫 Событие</option>
+                        <option value="💕">💕 Особенный день</option>
+                        <option value="🌹">🌹 Романтика</option>
+                    </select>
+                    <button class="btn" onclick="addImportantDate()">➕ Добавить дату</button>
+                </div>
+                <div class="cards-grid" id="importantDatesGrid"></div>
+            </div>
+
+            <!-- CHAT SCREEN -->
+            <div class="screen" id="chat">
+                <div class="screen-header">
+                    <h1>💬 Чат</h1>
+                </div>
+                <div class="chat-container">
+                    <div class="messages" id="messages"></div>
+                    <div class="chat-input-group">
+                        <input 
+                            type="text" 
+                            class="chat-input" 
+                            id="chatInput" 
+                            placeholder="Напиши что-то..." 
+                            onkeypress="if(event.key==='Enter') sendMessage()"
+                        >
+                        <button class="send-btn" onclick="sendMessage()">➤</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- WALL SCREEN -->
+            <div class="screen" id="wall">
+                <div class="screen-header">
+                    <h1>🎨 Стена</h1>
+                    <p>Рисуйте вместе</p>
+                </div>
+                <canvas id="drawingCanvas"></canvas>
+                <div class="canvas-controls">
+                    <input type="color" class="color-picker" id="colorPicker" value="#e8a5b3" onchange="setColor(this.value)">
+                    <input type="range" min="1" max="20" value="3" id="brushSize" style="width: 100px;">
+                    <button class="control-btn" onclick="clearCanvas()">🗑️ Очистить</button>
+                    <button class="control-btn" onclick="downloadCanvas()">⬇️ Сохранить</button>
+                </div>
+            </div>
+
+            <!-- POSTCARDS SCREEN -->
+            <div class="screen" id="postcards">
+                <div class="screen-header">
+                    <h1>📮 Открытки</h1>
+                    <p>Оставляйте друг другу открытки с фото</p>
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <button class="btn" onclick="document.getElementById('imageUpload').click()">📸 Загрузить открытку</button>
+                    <input type="file" id="imageUpload" accept="image/*" onchange="uploadPostcard(event)" style="display: none;">
+                </div>
+                <div class="postcards-grid" id="postcardsGrid"></div>
+            </div>
+
+            <!-- GOALS SCREEN -->
+            <div class="screen" id="goals">
+                <div class="screen-header">
+                    <h1>🎯 Цели и планы</h1>
+                    <p>Совместные мечты на будущее</p>
+                </div>
+                <div style="margin-bottom: 20px; display: flex; flex-direction: column; gap: 12px;">
+                    <input type="text" placeholder="Название цели" id="goalName">
+                    <input type="date" id="goalDate">
+                    <button class="btn" onclick="addGoal()">✨ Добавить цель</button>
+                </div>
+                <div class="goals-list" id="goalsList"></div>
+            </div>
+
+            <!-- STATS SCREEN -->
+            <div class="screen" id="stats">
+                <div class="screen-header">
+                    <h1>📈 Статистика</h1>
+                </div>
+                <div class="cards-grid">
+                    <div class="card">
+                        <div class="card-value" id="todaySteps">0</div>
+                        <div class="card-label">Шагов сегодня</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-value" id="totalSteps">0</div>
+                        <div class="card-label">Всего шагов</div>
+                    </div>
+                </div>
+                <div style="margin-top: 20px;">
+                    <h3 style="margin-bottom: 12px;">Добавить шаги</h3>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="number" id="stepsInput" placeholder="Количество" style="flex: 1;">
+                        <button class="btn" onclick="addSteps()">Добавить</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SETTINGS SCREEN -->
+            <div class="screen" id="settings">
+                <div class="screen-header">
+                    <h1>⚙️ Настройки</h1>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 16px;">
+                    <div>
+                        <label style="display: block; margin-bottom: 8px; font-weight: 500;">Дата знакомства</label>
+                        <input type="date" id="meetingDate" onchange="updateMeetingDate(this.value)">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 8px; font-weight: 500;">Имя - Она</label>
+                        <input type="text" id="person1NameInput" onchange="updatePerson1Name()" style="padding: 12px; border: 1px solid #d0dce7; border-radius: 8px; font-size: 14px;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 8px; font-weight: 500;">День рождения - Она</label>
+                        <input type="date" id="birthdayPerson1" onchange="updateBirthdays()">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 8px; font-weight: 500;">Имя - Он</label>
+                        <input type="text" id="person2NameInput" onchange="updatePerson2Name()" style="padding: 12px; border: 1px solid #d0dce7; border-radius: 8px; font-size: 14px;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 8px; font-weight: 500;">День рождения - Он</label>
+                        <input type="date" id="birthdayPerson2" onchange="updateBirthdays()">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 8px; font-weight: 500;">Ваше имя</label>
+                        <input type="text" id="userName" onchange="saveSettings()">
+                    </div>
+                    <button class="btn-secondary" onclick="exportData()" style="padding: 12px 24px; border: 1px solid #d0dce7; border-radius: 8px; cursor: pointer;">📥 Экспортировать данные</button>
+                    <button class="btn-secondary" onclick="clearAllData()" style="padding: 12px 24px; border: 1px solid #d0dce7; border-radius: 8px; cursor: pointer; color: #d9534f;">🗑️ Очистить все данные</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BOTTOM NAVIGATION (MOBILE) -->
+    <nav class="bottom-nav">
+        <button class="nav-tab active" onclick="switchScreen('home')"><span class="nav-tab-icon">📊</span><div>Главная</div></button>
+        <button class="nav-tab" onclick="switchScreen('chat')"><span class="nav-tab-icon">💬</span><div>Чат</div></button>
+        <button class="nav-tab" onclick="switchScreen('wall')"><span class="nav-tab-icon">🎨</span><div>Стена</div></button>
+        <button class="nav-tab" onclick="switchScreen('postcards')"><span class="nav-tab-icon">📮</span><div>Открытки</div></button>
+    </nav>
+
+    <script>
+        // ===== ИНИЦИАЛИЗАЦИЯ =====
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('data:application/javascript,' + encodeURIComponent(`
+                self.addEventListener('install', event => {
+                    event.waitUntil(caches.open('v1').then(cache => cache.addAll(['/'])));
+                });
+                self.addEventListener('fetch', event => {
+                    event.respondWith(caches.match(event.request).then(response => response || fetch(event.request)));
+                });
+            `)).catch(err => console.log('SW registration failed:', err));
+        }
+
+        // ===== СОСТОЯНИЕ ПРИЛОЖЕНИЯ =====
+        let appState = {
+            meetingDate: localStorage.getItem('meetingDate') || '2024-06-24',
+            person1Name: localStorage.getItem('person1Name') || 'Сурикат',
+            person2Name: localStorage.getItem('person2Name') || 'Кот',
+            birthdayP1: localStorage.getItem('birthdayP1') || '1995-08-12',
+            birthdayP2: localStorage.getItem('birthdayP2') || '1995-03-18',
+            userName: localStorage.getItem('userName') || 'Ты и я',
+            messages: JSON.parse(localStorage.getItem('messages') || '[]'),
+            postcards: JSON.parse(localStorage.getItem('postcards') || '[]'),
+            goals: JSON.parse(localStorage.getItem('goals') || '[]'),
+            importantDates: JSON.parse(localStorage.getItem('importantDates') || '[]'),
+            canvasData: localStorage.getItem('canvasData') || null
+        };
+
+        // ===== НАВИГАЦИЯ =====
+        function switchScreen(screenId) {
+            // Скрыть все экраны
+            document.querySelectorAll('.screen').forEach(screen => screen.classList.remove('active'));
+            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+
+            // Показать нужный экран
+            document.getElementById(screenId).classList.add('active');
+            
+            // Обновить активную кнопку навигации
+            document.querySelector(`.nav-tab[onclick="switchScreen('${screenId}')"]`)?.classList.add('active');
+            document.querySelector(`.nav-item[onclick="switchScreen('${screenId}')"]`)?.classList.add('active');
+
+            // Инициализация специфичных экранов
+            if (screenId === 'wall') initCanvas();
+            if (screenId === 'postcards') renderPostcards();
+            if (screenId === 'goals') renderGoals();
+            if (screenId === 'stats') renderStats();
+            if (screenId === 'settings') loadSettings();
+        }
+
+        // ===== ГЛАВНЫЙ ЭКРАН =====
+        function updateDaysCounter() {
+            const meetingDate = new Date(appState.meetingDate);
+            const now = new Date();
+            const diff = now - meetingDate;
+            
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+            document.getElementById('daysDisplay').textContent = days;
+            document.getElementById('hoursDisplay').textContent = hours;
+            document.getElementById('minutesDisplay').textContent = minutes;
+            document.getElementById('secondsDisplay').textContent = seconds;
+            document.getElementById('daysTogetherDisplay').textContent = days;
+        }
+
+        function updateBirthdayCounters() {
+            const today = new Date();
+            const currentYear = today.getFullYear();
+
+            // Сурикат - день рождения 12 августа
+            const p1Birthday = new Date(appState.birthdayP1);
+            const p1ThisYear = new Date(currentYear, p1Birthday.getMonth(), p1Birthday.getDate());
+            if (p1ThisYear < today) p1ThisYear.setFullYear(currentYear + 1);
+            const daysToP1 = Math.ceil((p1ThisYear - today) / (1000 * 60 * 60 * 24));
+            const p1Progress = ((365 - Math.max(0, daysToP1)) / 365) * 360;
+            document.getElementById('daysToP1').textContent = Math.max(0, daysToP1);
+            document.documentElement.style.setProperty('--person1-progress', p1Progress + 'deg');
+            document.getElementById('person1NameDisplay').textContent = appState.person1Name + ' (др: 12.08)';
+
+            // Кот - день рождения 18 марта
+            const p2Birthday = new Date(appState.birthdayP2);
+            const p2ThisYear = new Date(currentYear, p2Birthday.getMonth(), p2Birthday.getDate());
+            if (p2ThisYear < today) p2ThisYear.setFullYear(currentYear + 1);
+            const daysToP2 = Math.ceil((p2ThisYear - today) / (1000 * 60 * 60 * 24));
+            const p2Progress = ((365 - Math.max(0, daysToP2)) / 365) * 360;
+            document.getElementById('daysToP2').textContent = Math.max(0, daysToP2);
+            document.documentElement.style.setProperty('--person2-progress', p2Progress + 'deg');
+            document.getElementById('person2NameDisplay').textContent = appState.person2Name + ' (др: 18.03)';
+            
+            renderImportantDates();
+        }
+
+        function renderImportantDates() {
+            const grid = document.getElementById('importantDatesGrid');
+            if (!grid) return;
+            const today = new Date();
+            grid.innerHTML = (appState.importantDates || []).map((date, idx) => {
+                const eventDate = new Date(date.date);
+                const daysLeft = Math.ceil((eventDate - today) / (1000 * 60 * 60 * 24));
+                const daysText = daysLeft > 0 ? `${daysLeft} дн.` : daysLeft === 0 ? 'Сегодня!' : 'Прошла';
+                return `
+                    <div class="card" style="position: relative;">
+                        <div class="card-value">${date.icon}</div>
+                        <div class="card-label">${date.name}</div>
+                        <div style="font-size: 12px; color: #2196F3; margin-top: 4px;">${new Date(date.date).toLocaleDateString('ru-RU')}</div>
+                        <div style="font-size: 11px; color: #999; margin-top: 2px;">${daysText}</div>
+                        <button onclick="deleteImportantDate(${idx})" style="position: absolute; top: 8px; right: 8px; background: none; border: none; cursor: pointer; font-size: 16px; color: #999;">✕</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function addImportantDate() {
+            const nameInput = document.getElementById('importantDateName');
+            const dateInput = document.getElementById('importantDateInput');
+            const iconSelect = document.getElementById('importantDateIcon');
+            
+            const name = nameInput.value.trim();
+            const date = dateInput.value;
+            const icon = iconSelect.value || '📅';
+            
+            if (!name || !date) {
+                alert('Заполните все поля');
+                return;
+            }
+
+            if (!appState.importantDates) appState.importantDates = [];
+            appState.importantDates.push({ name, date, icon });
+            localStorage.setItem('importantDates', JSON.stringify(appState.importantDates));
+            
+            nameInput.value = '';
+            dateInput.value = '';
+            iconSelect.value = '📅';
+            
+            renderImportantDates();
+            alert('✅ Дата добавлена!');
+        }
+
+        function deleteImportantDate(idx) {
+            if (appState.importantDates) {
+                appState.importantDates.splice(idx, 1);
+                localStorage.setItem('importantDates', JSON.stringify(appState.importantDates));
+                renderImportantDates();
+            }
+        }
+
+        // ===== ЧАТ =====
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            if (!appState.messages) appState.messages = [];
+            
+            const message = {
+                id: Date.now(),
+                text: text,
+                sender: 'sent',
+                time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+            };
+
+            appState.messages.push(message);
+            localStorage.setItem('messages', JSON.stringify(appState.messages));
+            input.value = '';
+            renderMessages();
+            
+            const messagesDiv = document.getElementById('messages');
+            if (messagesDiv) {
+                setTimeout(() => {
+                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                }, 100);
+            }
+        }
+
+        function renderMessages() {
+            const messagesDiv = document.getElementById('messages');
+            if (!messagesDiv) return;
+            
+            if (!appState.messages || appState.messages.length === 0) {
+                messagesDiv.innerHTML = '<div style="text-align: center; color: #999; padding: 20px; font-size: 14px;">Начните разговор!</div>';
+                return;
+            }
+            
+            const html = appState.messages.map(msg => {
+                const text = String(msg.text || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                return `
+                    <div class="message ${msg.sender}">
+                        <div>
+                            <div class="message-bubble">${text}</div>
+                            <div class="message-time">${msg.time}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            messagesDiv.innerHTML = html;
+            setTimeout(() => {
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }, 50);
+        }
+
+        // ===== СТЕНА =====
+        let canvas, ctx, isDrawing = false, lastX = 0, lastY = 0;
+        let currentColor = '#e8a5b3';
+        let brushSize = 3;
+
+        function initCanvas() {
+            canvas = document.getElementById('drawingCanvas');
+            if (!canvas) return;
+            ctx = canvas.getContext('2d');
+
+            const parent = canvas.parentElement;
+            const rect = parent.getBoundingClientRect();
+            canvas.width = Math.max(200, Math.min(rect.width - 40, 600));
+            canvas.height = 400;
+
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            if (appState.canvasData) {
+                const img = new Image();
+                img.onload = () => {
+                    ctx.drawImage(img, 0, 0);
+                };
+                img.src = appState.canvasData;
+            }
+
+            canvas.addEventListener('pointerdown', startDrawing, false);
+            canvas.addEventListener('pointermove', draw, false);
+            canvas.addEventListener('pointerup', stopDrawing, false);
+            canvas.addEventListener('pointerleave', stopDrawing, false);
+        }
+
+        function startDrawing(e) {
+            if (!canvas) return;
+            isDrawing = true;
+            const rect = canvas.getBoundingClientRect();
+            lastX = (e.clientX || e.touches[0].clientX) - rect.left;
+            lastY = (e.clientY || e.touches[0].clientY) - rect.top;
+        }
+
+        function draw(e) {
+            if (!isDrawing || !canvas || !ctx) return;
+            e.preventDefault();
+            
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX || e.touches[0].clientX) - rect.left;
+            const y = (e.clientY || e.touches[0].clientY) - rect.top;
+
+            ctx.strokeStyle = currentColor;
+            ctx.lineWidth = parseInt(document.getElementById('brushSize')?.value || 3);
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+
+            lastX = x;
+            lastY = y;
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+            if (canvas && ctx) {
+                appState.canvasData = canvas.toDataURL('image/png');
+                localStorage.setItem('canvasData', appState.canvasData);
+            }
+        }
+
+        function setColor(color) {
+            currentColor = color;
+        }
+
+        function clearCanvas() {
+            if (confirm('Вы уверены? Это удалит весь рисунок.')) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                appState.canvasData = canvas.toDataURL();
+                localStorage.setItem('canvasData', appState.canvasData);
+            }
+        }
+
+        function downloadCanvas() {
+            const link = document.createElement('a');
+            link.href = canvas.toDataURL();
+            link.download = `wall-${new Date().toISOString()}.png`;
+            link.click();
+        }
+
+        // ===== ОТКРЫТКИ =====
+        function uploadPostcard(event) {
+            const file = event.target.files[0];
+            if (!file) {
+                console.error('Файл не выбран');
+                return;
+            }
+
+            if (!file.type.startsWith('image/')) {
+                alert('Пожалуйста, выберите изображение');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onerror = () => {
+                alert('Ошибка при загрузке файла');
+            };
+            reader.onload = (e) => {
+                try {
+                    const postcard = {
+                        id: Date.now(),
+                        src: e.target.result,
+                        date: new Date().toLocaleString('ru-RU')
+                    };
+                    if (!appState.postcards) appState.postcards = [];
+                    appState.postcards.push(postcard);
+                    localStorage.setItem('postcards', JSON.stringify(appState.postcards));
+                    renderPostcards();
+                    document.getElementById('imageUpload').value = '';
+                    alert('Открытка загружена!');
+                } catch (err) {
+                    alert('Ошибка при сохранении: ' + err.message);
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function renderPostcards() {
+            const grid = document.getElementById('postcardsGrid');
+            if (!grid) return;
+            
+            const html = appState.postcards.map((pc, idx) => `
+                <div class="postcard" style="--rotate: ${Math.random() * 4 - 2}deg;">
+                    <img src="${pc.src}" alt="Открытка" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+                </div>
+            `).join('') + `
+                <div class="postcard" style="cursor: pointer; --rotate: 1deg;" onclick="document.getElementById('imageUpload').click()">
+                    <div class="postcard-placeholder">
+                        <span style="font-size: 32px;">+</span>
+                    </div>
+                </div>
+            `;
+            grid.innerHTML = html;
+        }
+
+        function viewPostcard(idx) {
+            alert(`Открытка от ${appState.postcards[idx].date}`);
+        }
+
+        // ===== ЦЕЛИ =====
+        function addGoal() {
+            const name = document.getElementById('goalName').value.trim();
+            const date = document.getElementById('goalDate').value;
+            if (!name || !date) return alert('Заполните все поля');
+
+            const goal = {
+                id: Date.now(),
+                name: name,
+                date: date,
+                completed: false
+            };
+            appState.goals.push(goal);
+            localStorage.setItem('goals', JSON.stringify(appState.goals));
+            document.getElementById('goalName').value = '';
+            document.getElementById('goalDate').value = '';
+            renderGoals();
+        }
+
+        function renderGoals() {
+            const list = document.getElementById('goalsList');
+            const today = new Date();
+            list.innerHTML = appState.goals.map(goal => {
+                const goalDate = new Date(goal.date);
+                const isUpcoming = goalDate > today;
+                const daysLeft = Math.ceil((goalDate - today) / (1000 * 60 * 60 * 24));
+                const icon = isUpcoming ? (daysLeft > 0 ? '⏳' : '✅') : '🎉';
+                return `
+                    <div class="goal-item">
+                        <div class="goal-info">
+                            <h3>${goal.name}</h3>
+                            <div class="goal-date">${isUpcoming ? `Осталось ${Math.max(0, daysLeft)} дней` : 'Дата прошла!'}</div>
+                        </div>
+                        <div class="goal-status">${icon}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ===== НАСТРОЙКИ =====
+        function loadSettings() {
+            document.getElementById('meetingDate').value = appState.meetingDate;
+            document.getElementById('birthdayPerson1').value = appState.birthdayP1;
+            document.getElementById('birthdayPerson2').value = appState.birthdayP2;
+            document.getElementById('userName').value = appState.userName;
+        }
+
+        function updatePerson1Name() {
+            appState.person1Name = document.getElementById('person1NameInput').value || 'Сурикат';
+            localStorage.setItem('person1Name', appState.person1Name);
+            updateBirthdayCounters();
+        }
+
+        function updatePerson2Name() {
+            appState.person2Name = document.getElementById('person2NameInput').value || 'Кот';
+            localStorage.setItem('person2Name', appState.person2Name);
+            updateBirthdayCounters();
+        }
+
+        function updateMeetingDate(date) {
+            appState.meetingDate = date;
+            localStorage.setItem('meetingDate', date);
+            updateDaysCounter();
+            updateBirthdayCounters();
+        }
+
+        function updateBirthdays() {
+            appState.birthdayP1 = document.getElementById('birthdayPerson1').value;
+            appState.birthdayP2 = document.getElementById('birthdayPerson2').value;
+            localStorage.setItem('birthdayP1', appState.birthdayP1);
+            localStorage.setItem('birthdayP2', appState.birthdayP2);
+            updateBirthdayCounters();
+        }
+
+        function saveSettings() {
+            appState.userName = document.getElementById('userName').value;
+            localStorage.setItem('userName', appState.userName);
+        }
+
+        function exportData() {
+            const data = JSON.stringify(appState, null, 2);
+            const blob = new Blob([data], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `история-${new Date().toISOString()}.json`;
+            a.click();
+        }
+
+        function clearAllData() {
+            if (confirm('ВСЕ ДАННЫЕ БУДУТ УДАЛЕНЫ! Вы уверены?')) {
+                localStorage.clear();
+                location.reload();
+            }
+        }
+
+        // ===== ЗАПУСК =====
+        updateDaysCounter();
+        updateBirthdayCounters();
+        renderMessages();
+        renderImportantDates();
+        setInterval(updateDaysCounter, 1000);
+    </script>
+</body>
+</html>
