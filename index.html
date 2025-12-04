@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="description" content="PWA приложение для нас">
     <meta name="theme-color" content="#2196F3">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Наша История</title>
@@ -13,12 +14,12 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
-    <!-- Иконки и манифест оставляем те же -->
+    <!-- Иконки и манифест (Исправлены кавычки для JSON) -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%232196F3' width='192' height='192'/><text x='96' y='120' font-size='120' fill='white' text-anchor='middle' font-weight='bold'>💕</text></svg>">
-    <link rel="manifest" href="data:application/json,{ 'name': 'Наша История', 'short_name': 'История', 'description': 'Совместное приложение', 'start_url': '/', 'display': 'standalone', 'background_color': '#ffffff', 'theme_color': '#2196F3', 'icons': [ {'src': 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 192 192%22><rect fill=%22%232196F3%22 width=%22192%22 height=%22192%22/><text x=%2296%22 y=%22120%22 font-size=%22120%22 fill=%22white%22 text-anchor=%22middle%22 font-weight=%22bold%22>💕</text></svg>', 'sizes': '192x192', 'type': 'image/svg+xml', 'purpose': 'any'} ] }">
+    <link rel="manifest" href='data:application/json,{"name": "Наша История", "short_name": "История", "description": "Совместное приложение", "start_url": "/", "display": "standalone", "background_color": "#ffffff", "theme_color": "#2196F3", "icons": [{"src": "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 192 192%22><rect fill=%22%232196F3%22 width=%22192%22 height=%22192%22/><text x=%2296%22 y=%22120%22 font-size=%22120%22 fill=%22white%22 text-anchor=%22middle%22 font-weight=%22bold%22>💕</text></svg>", "sizes": "192x192", "type": "image/svg+xml", "purpose": "any"}]}'>
 
     <style>
-        /* ВАШИ СТИЛИ БЕЗ ИЗМЕНЕНИЙ (я их сжал для краткости, вставьте свои обратно, если нужно что-то менять) */
+        /* СТИЛИ */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background: linear-gradient(135deg, #f0f4f8 0%, #e8f1f7 100%); color: #1a1a1a; overflow-x: hidden; touch-action: manipulation; }
         .container { display: flex; min-height: 100vh; }
@@ -55,20 +56,17 @@
         .nav-tab.active { color: #2196F3; }
         .nav-tab-icon { font-size: 20px; margin-bottom: 2px; }
         
-        /* Загрузчик */
         #loader { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: white; z-index: 2000; display: flex; justify-content: center; align-items: center; flex-direction: column; color: #2196F3; transition: opacity 0.5s; }
     </style>
 </head>
 <body>
 
-<!-- Экран загрузки -->
 <div id="loader">
     <div style="font-size: 40px;">💕</div>
     <div style="margin-top: 10px;">Загрузка истории...</div>
 </div>
 
 <div class="container">
-    <!-- SIDEBAR -->
     <nav class="sidebar">
         <div class="sidebar-header">💕 История</div>
         <div class="sidebar-nav">
@@ -81,36 +79,26 @@
         </div>
     </nav>
 
-    <!-- MAIN CONTENT -->
     <div class="main-content">
         <!-- HOME -->
         <div class="screen active" id="home">
             <h1 style="font-size: 24px; margin-bottom: 5px;">Наша История</h1>
             <p style="margin-bottom: 20px; color: #666;">Вместе уже <strong id="daysTogetherDisplay">...</strong></p>
-
             <div class="cards-grid">
                 <div class="card"><div class="card-value" id="daysDisplay">0</div><div class="card-label">Дней</div></div>
                 <div class="card"><div class="card-value" id="hoursDisplay">0</div><div class="card-label">Часов</div></div>
                 <div class="card"><div class="card-value" id="minutesDisplay">0</div><div class="card-label">Минут</div></div>
             </div>
-
             <h2 style="font-size: 18px; margin: 24px 0 10px;">До Дня Рождения</h2>
             <div class="cards-grid">
-                <div class="card">
-                    <div class="card-value" id="daysToP1">...</div>
-                    <div class="card-label" id="person1NameDisplay">Она</div>
-                </div>
-                <div class="card">
-                    <div class="card-value" id="daysToP2">...</div>
-                    <div class="card-label" id="person2NameDisplay">Он</div>
-                </div>
+                <div class="card"><div class="card-value" id="daysToP1">...</div><div class="card-label" id="person1NameDisplay">Она</div></div>
+                <div class="card"><div class="card-value" id="daysToP2">...</div><div class="card-label" id="person2NameDisplay">Он</div></div>
             </div>
-
             <h2 style="font-size: 18px; margin: 24px 0 10px;">Важные даты</h2>
             <div style="background: white; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #e3f2fd;">
-                <input type="text" id="impName" placeholder="Название (например: Поездка)">
+                <input type="text" id="impName" placeholder="Название">
                 <input type="date" id="impDate">
-                <button class="btn" onclick="addImportantDate()">➕ Добавить дату</button>
+                <button class="btn" onclick="addImportantDate()">➕ Добавить</button>
             </div>
             <div class="cards-grid" id="importantDatesGrid"></div>
         </div>
@@ -169,7 +157,7 @@
                 <label>ДР (Она): <input type="date" id="p1Birth"></label>
                 <label>Имя (Он): <input type="text" id="p2Name"></label>
                 <label>ДР (Он): <input type="date" id="p2Birth"></label>
-                <button class="btn" onclick="saveSettings()">💾 Сохранить настройки</button>
+                <button class="btn" onclick="saveSettings()">💾 Сохранить</button>
             </div>
         </div>
     </div>
@@ -183,19 +171,20 @@
 </nav>
 
 <script>
-    // ===== 1. КОНФИГУРАЦИЯ FIREBASE =====
-    // ВСТАВЬТЕ СЮДА СВОЙ КОНФИГ (из Шага 1 инструкции)
+    // ===== ВНИМАНИЕ: ЗАМЕНИТЕ ЭТОТ БЛОК НА ВАШИ ДАННЫЕ =====
+    // Убедитесь, что вы не дублируете слово 'const'
+    
     const firebaseConfig = {
-        const firebaseConfig = {
-  apiKey: "AIzaSyAC3UZFlS--RqjW0Q6H-U-lvNKMdWsISNE",
-  authDomain: "people-9a61e.firebaseapp.com",
-  databaseURL: "https://people-9a61e-default-rtdb.firebaseio.com",
-  projectId: "people-9a61e",
-  storageBucket: "people-9a61e.firebasestorage.app",
-  messagingSenderId: "145026547520",
-  appId: "1:145026547520:web:778757e170c944db8e84a5",
-  measurementId: "G-CJGNF142ZF"
+  apiKey: "AIzaSyA2KdD09QtBYIbFJKvCFMON6A--IxG2MXk",
+  authDomain: "peop-3.firebaseapp.com",
+  databaseURL: "https://peop-3-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "peop-3",
+  storageBucket: "peop-3.firebasestorage.app",
+  messagingSenderId: "293847601602",
+  appId: "1:293847601602:web:9ad16928d4c1003b5a465b",
     };
+    
+    // ========================================================
 
     // Инициализация
     if (!firebase.apps.length) {
@@ -203,7 +192,7 @@
     }
     const db = firebase.database();
 
-    // Глобальное состояние
+    // Состояние
     let appState = {
         settings: {
             meetingDate: '2024-01-01',
@@ -212,16 +201,13 @@
         }
     };
 
-    // Уникальный ID устройства (для чата)
     let deviceId = localStorage.getItem('deviceId');
     if (!deviceId) {
         deviceId = 'user_' + Math.random().toString(36).substr(2, 9);
         localStorage.setItem('deviceId', deviceId);
     }
 
-    // ===== 2. СИНХРОНИЗАЦИЯ С БАЗОЙ =====
-    
-    // Загрузка настроек
+    // Загрузка данных
     db.ref('settings').on('value', (snapshot) => {
         const val = snapshot.val();
         if (val) {
@@ -231,9 +217,11 @@
         }
         document.getElementById('loader').style.opacity = 0;
         setTimeout(() => document.getElementById('loader').style.display = 'none', 500);
+    }, (error) => {
+        console.error("Ошибка загрузки:", error);
+        alert("Ошибка доступа к базе данных. Проверьте правила (Rules) в Firebase.");
     });
 
-    // Загрузка чата
     db.ref('chat').limitToLast(50).on('value', (snapshot) => {
         const messagesDiv = document.getElementById('messages');
         messagesDiv.innerHTML = '';
@@ -248,74 +236,43 @@
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
     });
 
-    // Загрузка важных дат
     db.ref('importantDates').on('value', (snapshot) => {
         const grid = document.getElementById('importantDatesGrid');
         grid.innerHTML = '';
         snapshot.forEach((child) => {
             const item = child.val();
             const key = child.key;
-            
-            // Расчет дней
             const today = new Date();
             const target = new Date(item.date);
             const diff = Math.ceil((target - today) / (1000 * 60 * 60 * 24));
             const daysText = diff >= 0 ? `Через ${diff} дн.` : 'Прошло';
-
-            grid.innerHTML += `
-                <div class="card" style="position:relative;">
-                    <button onclick="deleteItem('importantDates', '${key}')" style="position:absolute; right:5px; top:5px; border:none; background:none; color:red;">×</button>
-                    <div class="card-value" style="font-size:20px">📅</div>
-                    <div class="card-label" style="font-size:14px; color:#333; margin-top:5px;">${item.name}</div>
-                    <div style="font-size:12px; color:#2196F3;">${item.date}</div>
-                    <div style="font-size:11px; color:#999;">${daysText}</div>
-                </div>
-            `;
+            grid.innerHTML += `<div class="card" style="position:relative;"><button onclick="deleteItem('importantDates', '${key}')" style="position:absolute; right:5px; top:5px; border:none; background:none; color:red;">×</button><div class="card-value" style="font-size:20px">📅</div><div class="card-label" style="font-size:14px; color:#333; margin-top:5px;">${item.name}</div><div style="font-size:12px; color:#2196F3;">${item.date}</div><div style="font-size:11px; color:#999;">${daysText}</div></div>`;
         });
     });
 
-    // Загрузка открыток
     db.ref('postcards').on('value', (snapshot) => {
         const grid = document.getElementById('postcardsGrid');
         grid.innerHTML = '';
         snapshot.forEach((child) => {
             const imgData = child.val();
-            grid.innerHTML += `
-                <div class="postcard">
-                    <img src="${imgData}" onclick="alert('Открытка!')">
-                </div>
-            `;
+            grid.innerHTML += `<div class="postcard"><img src="${imgData}" onclick="alert('Открытка!')"></div>`;
         });
     });
 
-    // Загрузка целей
     db.ref('goals').on('value', (snapshot) => {
         const list = document.getElementById('goalsList');
         list.innerHTML = '';
         snapshot.forEach((child) => {
             const goal = child.val();
             const key = child.key;
-            list.innerHTML += `
-                <div style="background:white; padding:15px; border-radius:8px; border-left:4px solid #2196F3; display:flex; justify-content:space-between; align-items:center;">
-                    <div>
-                        <div style="font-weight:bold;">${goal.name}</div>
-                        <div style="font-size:12px; color:#999;">${goal.date}</div>
-                    </div>
-                    <button onclick="deleteItem('goals', '${key}')" style="border:none; background:none; font-size:18px;">🗑️</button>
-                </div>
-            `;
+            list.innerHTML += `<div style="background:white; padding:15px; border-radius:8px; border-left:4px solid #2196F3; display:flex; justify-content:space-between; align-items:center;"><div><div style="font-weight:bold;">${goal.name}</div><div style="font-size:12px; color:#999;">${goal.date}</div></div><button onclick="deleteItem('goals', '${key}')" style="border:none; background:none; font-size:18px;">🗑️</button></div>`;
         });
     });
 
-    // Загрузка Стены (Canvas)
+    // Стена
     let canvas = document.getElementById('drawingCanvas');
     let ctx = canvas.getContext('2d');
-    
-    // Подстраиваем размер канваса
-    function resizeCanvas() {
-        const parent = canvas.parentElement;
-        canvas.width = parent.clientWidth; 
-    }
+    function resizeCanvas() { const parent = canvas.parentElement; canvas.width = parent.clientWidth; }
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
@@ -328,39 +285,27 @@
         }
     });
 
-    // ===== 3. ФУНКЦИИ UI =====
-
+    // Логика
     function switchScreen(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
         document.querySelectorAll('.nav-tab, .nav-item').forEach(b => b.classList.remove('active'));
-        // Простая подсветка кнопок
-        const activeTabs = document.querySelectorAll(`[onclick="switchScreen('${id}')"]`);
-        activeTabs.forEach(t => t.classList.add('active'));
-        
+        document.querySelectorAll(`[onclick="switchScreen('${id}')"]`).forEach(t => t.classList.add('active'));
         if(id === 'wall') resizeCanvas();
     }
 
-    // Таймеры и счетчики
     function updateCounters() {
         if (!appState.settings.meetingDate) return;
-        
-        // Сколько вместе
         const start = new Date(appState.settings.meetingDate);
         const now = new Date();
         const diff = now - start;
         const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-        
         document.getElementById('daysDisplay').innerText = days;
         document.getElementById('daysTogetherDisplay').innerText = days + ' дней';
         document.getElementById('hoursDisplay').innerText = Math.floor(diff / (1000 * 60 * 60));
         document.getElementById('minutesDisplay').innerText = Math.floor(diff / (1000 * 60));
-
-        // Имена
         document.getElementById('person1NameDisplay').innerText = appState.settings.p1Name;
         document.getElementById('person2NameDisplay').innerText = appState.settings.p2Name;
-
-        // Дни рождения
         calcBirthday(appState.settings.p1Birth, 'daysToP1');
         calcBirthday(appState.settings.p2Birth, 'daysToP2');
     }
@@ -375,23 +320,17 @@
         document.getElementById(elemId).innerText = daysLeft;
     }
 
-    setInterval(updateCounters, 10000); // Обновляем каждые 10 сек
+    setInterval(updateCounters, 10000);
 
-    // Чат
     function sendMessage() {
         const input = document.getElementById('chatInput');
         const text = input.value.trim();
         if (text) {
-            db.ref('chat').push({
-                text: text,
-                deviceId: deviceId,
-                timestamp: Date.now()
-            });
+            db.ref('chat').push({ text: text, deviceId: deviceId, timestamp: Date.now() });
             input.value = '';
         }
     }
 
-    // Важные даты
     function addImportantDate() {
         const name = document.getElementById('impName').value;
         const date = document.getElementById('impDate').value;
@@ -399,29 +338,20 @@
             db.ref('importantDates').push({ name, date });
             document.getElementById('impName').value = '';
             document.getElementById('impDate').value = '';
-            alert('Дата добавлена!');
         }
     }
 
-    // Цели
     function addGoal() {
         const name = document.getElementById('goalName').value;
         const date = document.getElementById('goalDate').value;
         if (name && date) {
             db.ref('goals').push({ name, date });
             document.getElementById('goalName').value = '';
-            alert('Цель добавлена!');
         }
     }
 
-    // Удаление элементов
-    function deleteItem(node, key) {
-        if(confirm('Удалить?')) {
-            db.ref(node).child(key).remove();
-        }
-    }
+    function deleteItem(node, key) { if(confirm('Удалить?')) db.ref(node).child(key).remove(); }
 
-    // Настройки
     function renderSettingsInputs() {
         document.getElementById('meetingDate').value = appState.settings.meetingDate || '';
         document.getElementById('p1Name').value = appState.settings.p1Name || '';
@@ -431,31 +361,24 @@
     }
 
     function saveSettings() {
-        const newSettings = {
+        db.ref('settings').set({
             meetingDate: document.getElementById('meetingDate').value,
             p1Name: document.getElementById('p1Name').value,
             p1Birth: document.getElementById('p1Birth').value,
             p2Name: document.getElementById('p2Name').value,
             p2Birth: document.getElementById('p2Birth').value
-        };
-        db.ref('settings').set(newSettings);
-        alert('Настройки сохранены и синхронизированы!');
+        });
+        alert('Сохранено!');
     }
 
-    // Стена (Рисование)
-    let isDrawing = false;
-    let lastX = 0; let lastY = 0;
-
+    // Canvas Logic
+    let isDrawing = false; let lastX = 0; let lastY = 0;
     function getPos(e) {
         const rect = canvas.getBoundingClientRect();
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        return {
-            x: clientX - rect.left,
-            y: clientY - rect.top
-        };
+        return { x: clientX - rect.left, y: clientY - rect.top };
     }
-
     canvas.addEventListener('mousedown', startDraw);
     canvas.addEventListener('touchstart', startDraw);
     canvas.addEventListener('mousemove', draw);
@@ -463,84 +386,45 @@
     canvas.addEventListener('mouseup', stopDraw);
     canvas.addEventListener('touchend', stopDraw);
 
-    function startDraw(e) {
-        isDrawing = true;
-        const pos = getPos(e);
-        lastX = pos.x; lastY = pos.y;
-    }
-
+    function startDraw(e) { isDrawing = true; const pos = getPos(e); lastX = pos.x; lastY = pos.y; }
     function draw(e) {
         if (!isDrawing) return;
-        e.preventDefault(); // чтобы не скроллило на телефоне
+        e.preventDefault();
         const pos = getPos(e);
-        
-        ctx.beginPath();
-        ctx.moveTo(lastX, lastY);
-        ctx.lineTo(pos.x, pos.y);
+        ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(pos.x, pos.y);
         ctx.strokeStyle = document.getElementById('colorPicker').value;
-        ctx.lineWidth = 3;
-        ctx.lineCap = 'round';
-        ctx.stroke();
-
+        ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.stroke();
         lastX = pos.x; lastY = pos.y;
     }
-
     function stopDraw() {
         if (isDrawing) {
             isDrawing = false;
-            // Сохраняем в Firebase при окончании штриха
-            // Внимание: Бесплатный тариф имеет ограничения, лучше рисовать немного :)
-            const dataUrl = canvas.toDataURL('image/png');
-            db.ref('wall').set(dataUrl);
+            db.ref('wall').set(canvas.toDataURL('image/png'));
         }
     }
+    function clearCanvas() { if(confirm('Стереть рисунок?')) { ctx.clearRect(0,0, canvas.width, canvas.height); db.ref('wall').set(null); } }
 
-    function clearCanvas() {
-        if(confirm('Стереть рисунок у всех?')) {
-            ctx.clearRect(0,0, canvas.width, canvas.height);
-            db.ref('wall').set(null);
-        }
-    }
-
-    // Загрузка фото (Открытки)
     function uploadPostcard(event) {
         const file = event.target.files[0];
         if (!file) return;
-
-        // Сжимаем фото перед отправкой (Firebase Realtime DB не любит большие файлы)
         const reader = new FileReader();
         reader.onload = (e) => {
             const img = new Image();
             img.onload = () => {
                 const tempCanvas = document.createElement('canvas');
-                let width = img.width;
-                let height = img.height;
-                
-                // Ограничиваем размер до 600px по ширине
+                let width = img.width; let height = img.height;
                 const maxSize = 600;
-                if (width > maxSize) {
-                    height = height * (maxSize / width);
-                    width = maxSize;
-                }
-                
-                tempCanvas.width = width;
-                tempCanvas.height = height;
+                if (width > maxSize) { height = height * (maxSize / width); width = maxSize; }
+                tempCanvas.width = width; tempCanvas.height = height;
                 const tCtx = tempCanvas.getContext('2d');
                 tCtx.drawImage(img, 0, 0, width, height);
-                
-                // Получаем сжатую строку base64
-                const compressedDataUrl = tempCanvas.toDataURL('image/jpeg', 0.7);
-                
-                // Отправляем в базу
-                db.ref('postcards').push(compressedDataUrl);
+                db.ref('postcards').push(tempCanvas.toDataURL('image/jpeg', 0.7));
                 alert('Фото отправлено!');
             };
             img.src = e.target.result;
         };
         reader.readAsDataURL(file);
     }
-
 </script>
 </body>
 </html>
-
