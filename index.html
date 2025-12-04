@@ -37,9 +37,21 @@
         
         /* Cards */
         .cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        
+        /* СПЕЦИАЛЬНЫЙ СТИЛЬ ДЛЯ СЧЕТЧИКОВ (ЧТОБЫ БЫЛО 2 В РЯД) */
+        .timer-grid { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 12px; 
+            margin-bottom: 24px; 
+        }
+        @media (min-width: 600px) {
+            .timer-grid { grid-template-columns: repeat(4, 1fr); }
+        }
+
         .card { background: white; border-radius: 12px; padding: 16px; box-shadow: 0 2px 8px rgba(33,150,243,0.08); text-align: center; border: 1px solid #e3f2fd; position: relative; }
         .card-value { font-size: 28px; font-weight: 700; color: #2196F3; }
-        .card-label { font-size: 12px; color: #999; text-transform: uppercase; }
+        .card-label { font-size: 12px; color: #999; text-transform: uppercase; margin-top: 4px; letter-spacing: 0.5px;}
         
         /* Chat */
         .chat-container { display: flex; flex-direction: column; height: calc(100vh - 180px); }
@@ -49,10 +61,8 @@
         .message-bubble { padding: 10px 14px; border-radius: 16px; font-size: 14px; word-wrap: break-word; position: relative; }
         .message.sent .message-bubble { background: #2196F3; color: white; border-bottom-right-radius: 2px; }
         .message.received .message-bubble { background: #e3f2fd; color: #333; border-bottom-left-radius: 2px; }
-        
-        /* Кнопка удаления сообщения */
         .delete-msg { position: absolute; top: -8px; left: -8px; background: #ff4444; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 12px; border: none; cursor: pointer; display: none; justify-content: center; align-items: center; z-index: 10;}
-        .message:hover .delete-msg { display: flex; } /* Показываем при наведении */
+        .message:hover .delete-msg { display: flex; }
 
         .chat-input-group { display: flex; gap: 8px; padding-top: 10px; border-top: 1px solid #eee; }
         .chat-input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 20px; outline: none; }
@@ -61,7 +71,7 @@
         /* Wall */
         #drawingCanvas { border: 2px solid #d0dce7; border-radius: 12px; background: white; touch-action: none; width: 100%; max-width: 600px; margin: 0 auto; display: block; cursor: crosshair; }
         
-        /* Postcards & Wall Gallery */
+        /* Postcards */
         .postcards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
         .postcard { position: relative; aspect-ratio: 3/4; background: white; padding: 5px; box-shadow: 2px 2px 8px rgba(0,0,0,0.1); border-radius: 8px; overflow: hidden; }
         .postcard img { width: 100%; height: 100%; object-fit: cover; border-radius: 4px; }
@@ -113,11 +123,24 @@
             <h1 style="font-size: 24px; margin-bottom: 5px;">Наша История</h1>
             <p style="margin-bottom: 20px; color: #666;">Вместе уже <strong id="daysTogetherDisplay">...</strong></p>
             
-            <!-- Counters -->
-            <div class="cards-grid">
-                <div class="card"><div class="card-value" id="daysDisplay">0</div><div class="card-label">Дней</div></div>
-                <div class="card"><div class="card-value" id="hoursDisplay">0</div><div class="card-label">Часов</div></div>
-                <div class="card"><div class="card-value" id="minutesDisplay">0</div><div class="card-label">Минут</div></div>
+            <!-- Counters (Обновленный таймер с секундами) -->
+            <div class="timer-grid">
+                <div class="card">
+                    <div class="card-value" id="daysDisplay">0</div>
+                    <div class="card-label">Дней</div>
+                </div>
+                <div class="card">
+                    <div class="card-value" id="hoursDisplay">0</div>
+                    <div class="card-label">Часов</div>
+                </div>
+                <div class="card">
+                    <div class="card-value" id="minutesDisplay">0</div>
+                    <div class="card-label">Минут</div>
+                </div>
+                <div class="card">
+                    <div class="card-value" id="secondsDisplay">0</div>
+                    <div class="card-label">Секунд</div>
+                </div>
             </div>
 
             <!-- Birthdays -->
@@ -255,9 +278,7 @@
             const msg = child.val();
             const key = child.key;
             const isMe = msg.user === currentUser;
-            const isAnon = !msg.user; // Если нет пользователя, это аноним/старое
-            
-            // Удалять можно: Свои сообщения ИЛИ Анонимные (чтобы удалить "123")
+            const isAnon = !msg.user;
             const canDelete = isMe || isAnon;
 
             const div = document.createElement('div');
@@ -280,7 +301,7 @@
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
     });
 
-    // Открытки (теперь с проверкой автора)
+    // Открытки
     db.ref('postcards').on('value', (snapshot) => {
         const grid = document.getElementById('postcardsGrid');
         grid.innerHTML = '';
@@ -288,11 +309,8 @@
             const data = child.val();
             const key = child.key;
             
-            // Поддержка старого формата (строка) и нового (объект)
             const src = typeof data === 'object' ? data.src : data;
             const user = typeof data === 'object' ? data.user : null;
-            
-            // Удалить может: Автор ИЛИ если автора нет (старая картинка)
             const canDelete = (user === currentUser) || (!user);
 
             const deleteBtn = canDelete ? `<button class="delete-card" onclick="deleteItem('postcards', '${key}')">🗑</button>` : '';
@@ -307,7 +325,7 @@
         });
     });
 
-    // Галерея Стены (Новый раздел)
+    // Галерея Стены
     db.ref('wall_gallery').on('value', (snapshot) => {
         const grid = document.getElementById('wallGalleryGrid');
         grid.innerHTML = '';
@@ -319,7 +337,6 @@
         snapshot.forEach((child) => {
             const data = child.val();
             const key = child.key;
-            
             const isMine = data.user === currentUser;
             const deleteBtn = isMine ? `<button class="delete-card" onclick="deleteItem('wall_gallery', '${key}')">🗑</button>` : '';
 
@@ -372,7 +389,7 @@
         });
     });
 
-    // Стена (Рисование в реальном времени)
+    // Стена
     let canvas = document.getElementById('drawingCanvas');
     let ctx = canvas.getContext('2d');
     
@@ -391,7 +408,6 @@
             img.onload = () => ctx.drawImage(img, 0, 0);
             img.src = dataUrl;
         } else {
-            // Если базу очистили
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
     });
@@ -406,16 +422,22 @@
         if(id === 'wall') resizeCanvas();
     }
 
+    // ТАЙМЕРЫ (С ДОБАВЛЕНИЕМ СЕКУНД)
     function updateCounters() {
         const start = new Date(SETTINGS.meetingDate);
         const now = new Date();
         const diff = now - start;
+        
         const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000); // Секунды
         
         document.getElementById('daysDisplay').innerText = days;
+        document.getElementById('hoursDisplay').innerText = hours;
+        document.getElementById('minutesDisplay').innerText = minutes;
+        document.getElementById('secondsDisplay').innerText = seconds; // Вывод секунд
         document.getElementById('daysTogetherDisplay').innerText = days + ' дней';
-        document.getElementById('hoursDisplay').innerText = Math.floor(diff / (1000 * 60 * 60));
-        document.getElementById('minutesDisplay').innerText = Math.floor(diff / (1000 * 60));
 
         calcBirthday(SETTINGS.p1Birth, 'daysToP1');
         calcBirthday(SETTINGS.p2Birth, 'daysToP2');
@@ -431,7 +453,8 @@
         document.getElementById(elemId).innerText = daysLeft;
     }
 
-    setInterval(updateCounters, 10000);
+    // Обновляем каждую секунду (1000мс)
+    setInterval(updateCounters, 1000);
 
     // ===== ДЕЙСТВИЯ ПОЛЬЗОВАТЕЛЯ =====
 
@@ -474,7 +497,6 @@
         }
     }
 
-    // Универсальная функция удаления
     function deleteItem(node, key) { 
         if(confirm('Удалить этот элемент?')) db.ref(node).child(key).remove(); 
     }
@@ -513,7 +535,6 @@
     function stopDraw() {
         if (isDrawing) {
             isDrawing = false;
-            // Обновляем текущее состояние доски для всех
             db.ref('wall').set(canvas.toDataURL('image/png'));
         }
     }
@@ -525,7 +546,6 @@
         } 
     }
 
-    // СОХРАНЕНИЕ РИСУНКА В ГАЛЕРЕЮ СТЕНЫ
     function saveWallDrawing() {
         if(confirm('Сохранить рисунок в галерею под доской?')) {
             const dataUrl = canvas.toDataURL(); 
@@ -539,7 +559,6 @@
         }
     }
 
-    // ЗАГРУЗКА ОТКРЫТКИ
     function uploadPostcard(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -555,7 +574,6 @@
                 const tCtx = tempCanvas.getContext('2d');
                 tCtx.drawImage(img, 0, 0, width, height);
                 
-                // Сохраняем объект с автором
                 db.ref('postcards').push({
                     src: tempCanvas.toDataURL('image/jpeg', 0.7),
                     user: currentUser,
