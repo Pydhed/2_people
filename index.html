@@ -38,7 +38,7 @@
         /* Cards */
         .cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px; margin-bottom: 24px; }
         
-        /* СПЕЦИАЛЬНЫЙ СТИЛЬ ДЛЯ СЧЕТЧИКОВ (ЧТОБЫ БЫЛО 2 В РЯД) */
+        /* Timer Grid */
         .timer-grid { 
             display: grid; 
             grid-template-columns: repeat(2, 1fr); 
@@ -114,16 +114,23 @@
             <button class="nav-item" onclick="switchScreen('chat')">💬 Чат</button>
             <button class="nav-item" onclick="switchScreen('wall')">🎨 Стена</button>
             <button class="nav-item" onclick="switchScreen('postcards')">📮 Открытки</button>
+            <div style="flex: 1"></div>
+            <button class="nav-item" onclick="doLogout()" style="color: #ff4444; border-top: 1px solid #eee;">🚪 Выйти</button>
         </div>
     </nav>
 
     <div class="main-content">
         <!-- HOME -->
         <div class="screen active" id="home">
-            <h1 style="font-size: 24px; margin-bottom: 5px;">Наша История</h1>
-            <p style="margin-bottom: 20px; color: #666;">Вместе уже <strong id="daysTogetherDisplay">...</strong></p>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <div>
+                    <h1 style="font-size: 24px; margin-bottom: 5px;">Наша История</h1>
+                    <p style="color: #666;">Вместе уже <strong id="daysTogetherDisplay">...</strong></p>
+                </div>
+                <button class="btn" style="width: auto; background: #ff4444; padding: 5px 12px; font-size: 13px;" onclick="doLogout()">Выйти</button>
+            </div>
             
-            <!-- Counters (Обновленный таймер с секундами) -->
+            <!-- Counters -->
             <div class="timer-grid">
                 <div class="card">
                     <div class="card-value" id="daysDisplay">0</div>
@@ -185,10 +192,15 @@
         <div class="screen" id="wall">
             <h1>🎨 Рисуем вместе</h1>
             <canvas id="drawingCanvas" height="400"></canvas>
-            <div style="margin-top: 15px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-                <input type="color" id="colorPicker" value="#e8a5b3" style="width: 50px; padding: 0;">
-                <button class="btn" style="width: auto;" onclick="clearCanvas()">🗑 Очистить доску</button>
-                <button class="btn" style="width: auto;" onclick="saveWallDrawing()">💾 Сохранить</button>
+            
+            <div style="margin-top: 15px; display: flex; align-items: center; justify-content: center; gap: 15px; flex-wrap: wrap;">
+                <div style="display: flex; flex-direction: column; align-items: center;">
+                    <span style="font-size: 11px; color: #666; margin-bottom: 4px;">Цвет</span>
+                    <input type="color" id="colorPicker" value="#000000" style="width: 40px; height: 35px; padding: 0; border: none; background: none;">
+                </div>
+                
+                <button class="btn" style="width: auto; height: 35px; margin-top: 0;" onclick="clearCanvas()">🗑 Очистить</button>
+                <button class="btn" style="width: auto; height: 35px; margin-top: 0;" onclick="saveWallDrawing()">💾 Сохранить</button>
             </div>
             
             <h2 style="font-size: 18px; margin: 30px 0 15px;">Галерея рисунков</h2>
@@ -265,6 +277,15 @@
             document.getElementById('loginError').style.display = 'block';
         }
     }
+    
+    // ФУНКЦИЯ ВЫХОДА
+    function doLogout() {
+        if(confirm('Выйти из профиля?')) {
+            localStorage.removeItem('currentUser');
+            location.reload();
+        }
+    }
+    
     checkAuth();
 
 
@@ -422,7 +443,7 @@
         if(id === 'wall') resizeCanvas();
     }
 
-    // ТАЙМЕРЫ (С ДОБАВЛЕНИЕМ СЕКУНД)
+    // ТАЙМЕРЫ
     function updateCounters() {
         const start = new Date(SETTINGS.meetingDate);
         const now = new Date();
@@ -431,12 +452,12 @@
         const days = Math.floor(diff / (1000 * 60 * 60 * 24));
         const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
         const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((diff % (1000 * 60)) / 1000); // Секунды
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000); 
         
         document.getElementById('daysDisplay').innerText = days;
         document.getElementById('hoursDisplay').innerText = hours;
         document.getElementById('minutesDisplay').innerText = minutes;
-        document.getElementById('secondsDisplay').innerText = seconds; // Вывод секунд
+        document.getElementById('secondsDisplay').innerText = seconds;
         document.getElementById('daysTogetherDisplay').innerText = days + ' дней';
 
         calcBirthday(SETTINGS.p1Birth, 'daysToP1');
@@ -450,10 +471,10 @@
         let nextBday = new Date(today.getFullYear(), bday.getMonth(), bday.getDate());
         if (today > nextBday) nextBday.setFullYear(today.getFullYear() + 1);
         const daysLeft = Math.ceil((nextBday - today) / (1000 * 60 * 60 * 24));
-        document.getElementById(elemId).innerText = daysLeft;
+        // ДОБАВЛЕНО: ' дн.' в конце
+        document.getElementById(elemId).innerText = daysLeft + ' дн.';
     }
 
-    // Обновляем каждую секунду (1000мс)
     setInterval(updateCounters, 1000);
 
     // ===== ДЕЙСТВИЯ ПОЛЬЗОВАТЕЛЯ =====
