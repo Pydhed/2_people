@@ -49,8 +49,10 @@
         .message-bubble { padding: 10px 14px; border-radius: 16px; font-size: 14px; word-wrap: break-word; position: relative; }
         .message.sent .message-bubble { background: #2196F3; color: white; border-bottom-right-radius: 2px; }
         .message.received .message-bubble { background: #e3f2fd; color: #333; border-bottom-left-radius: 2px; }
-        .delete-msg { position: absolute; top: -8px; left: -8px; background: #ff4444; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 12px; border: none; cursor: pointer; display: none; justify-content: center; align-items: center;}
-        .message.sent:hover .delete-msg { display: flex; }
+        
+        /* Кнопка удаления сообщения */
+        .delete-msg { position: absolute; top: -8px; left: -8px; background: #ff4444; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 12px; border: none; cursor: pointer; display: none; justify-content: center; align-items: center; z-index: 10;}
+        .message:hover .delete-msg { display: flex; } /* Показываем при наведении */
 
         .chat-input-group { display: flex; gap: 8px; padding-top: 10px; border-top: 1px solid #eee; }
         .chat-input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 20px; outline: none; }
@@ -59,11 +61,13 @@
         /* Wall */
         #drawingCanvas { border: 2px solid #d0dce7; border-radius: 12px; background: white; touch-action: none; width: 100%; max-width: 600px; margin: 0 auto; display: block; cursor: crosshair; }
         
-        /* Postcards */
-        .postcards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; }
-        .postcard { aspect-ratio: 3/4; background: white; padding: 5px; box-shadow: 2px 2px 8px rgba(0,0,0,0.1); transform: rotate(-2deg); transition: transform 0.2s; }
-        .postcard img { width: 100%; height: 100%; object-fit: cover; }
-        
+        /* Postcards & Wall Gallery */
+        .postcards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+        .postcard { position: relative; aspect-ratio: 3/4; background: white; padding: 5px; box-shadow: 2px 2px 8px rgba(0,0,0,0.1); border-radius: 8px; overflow: hidden; }
+        .postcard img { width: 100%; height: 100%; object-fit: cover; border-radius: 4px; }
+        .delete-card { position: absolute; top: 5px; right: 5px; background: rgba(255, 68, 68, 0.9); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+        .author-label { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,0.8); font-size: 10px; padding: 2px 5px; text-align: center; }
+
         /* Controls */
         .btn { padding: 10px 20px; background: #2196F3; color: white; border: none; border-radius: 6px; cursor: pointer; width: 100%; margin-top: 5px; }
         input, select { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 6px; }
@@ -132,7 +136,7 @@
             </div>
             <div class="cards-grid" id="importantDatesGrid"></div>
 
-            <!-- Goals (Moved here) -->
+            <!-- Goals -->
             <h2 style="font-size: 18px; margin: 24px 0 10px;">🎯 Цели</h2>
             <div style="background: white; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #e3f2fd;">
                 <input type="text" id="goalName" placeholder="Название цели">
@@ -160,9 +164,12 @@
             <canvas id="drawingCanvas" height="400"></canvas>
             <div style="margin-top: 15px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
                 <input type="color" id="colorPicker" value="#e8a5b3" style="width: 50px; padding: 0;">
-                <button class="btn" style="width: auto;" onclick="clearCanvas()">🗑 Очистить</button>
-                <button class="btn" style="width: auto;" onclick="saveCanvas()">💾 Сохранить</button>
+                <button class="btn" style="width: auto;" onclick="clearCanvas()">🗑 Очистить доску</button>
+                <button class="btn" style="width: auto;" onclick="saveWallDrawing()">💾 Сохранить</button>
             </div>
+            
+            <h2 style="font-size: 18px; margin: 30px 0 15px;">Галерея рисунков</h2>
+            <div id="wallGalleryGrid" class="postcards-grid"></div>
         </div>
 
         <!-- POSTCARDS -->
@@ -187,7 +194,7 @@
 </nav>
 
 <script>
-    // ===== КОНФИГ FIREBASE (ВАШ) =====
+    // ===== КОНФИГ FIREBASE =====
     const firebaseConfig = {
       apiKey: "AIzaSyA2KdD09QtBYIbFJKvCFMON6A--IxG2MXk",
       authDomain: "peop-3.firebaseapp.com",
@@ -198,20 +205,17 @@
       appId: "1:293847601602:web:9ad16928d4c1003b5a465b",
     };
 
-    // Инициализация
     if (!firebase.apps.length) {
         firebase.initializeApp(firebaseConfig);
     }
     const db = firebase.database();
 
-    // ===== НАСТРОЙКИ (ЖЕСТКО ЗАДАНЫ) =====
     const SETTINGS = {
         meetingDate: '2024-06-24',
-        p1Name: 'Сурикат', p1Birth: '2000-08-12', // Год не важен для подсчета дней
+        p1Name: 'Сурикат', p1Birth: '2000-08-12',
         p2Name: 'Кот',     p2Birth: '2000-03-18'
     };
 
-    // Текущий пользователь
     let currentUser = localStorage.getItem('currentUser');
 
     // ===== АВТОРИЗАЦИЯ =====
@@ -219,7 +223,7 @@
         if (currentUser) {
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('appContainer').style.display = 'flex';
-            updateCounters(); // Запускаем таймеры сразу
+            updateCounters(); 
         }
     }
 
@@ -227,10 +231,7 @@
         const u = document.getElementById('loginUser').value.toLowerCase().trim();
         const p = document.getElementById('loginPass').value.trim();
         let role = null;
-
-        // kot / kot -> Кот
         if (u === 'kot' && p.toLowerCase() === 'kot') role = 'Кот';
-        // surikat / kot -> Сурикат
         if (u === 'surikat' && p.toLowerCase() === 'kot') role = 'Сурикат';
 
         if (role) {
@@ -241,12 +242,10 @@
             document.getElementById('loginError').style.display = 'block';
         }
     }
-
-    // Запуск проверки при загрузке
     checkAuth();
 
 
-    // ===== ЗАГРУЗКА ДАННЫХ ИЗ БАЗЫ =====
+    // ===== ЗАГРУЗКА ДАННЫХ =====
     
     // Чат
     db.ref('chat').limitToLast(50).on('value', (snapshot) => {
@@ -256,12 +255,15 @@
             const msg = child.val();
             const key = child.key;
             const isMe = msg.user === currentUser;
+            const isAnon = !msg.user; // Если нет пользователя, это аноним/старое
             
+            // Удалять можно: Свои сообщения ИЛИ Анонимные (чтобы удалить "123")
+            const canDelete = isMe || isAnon;
+
             const div = document.createElement('div');
             div.className = `message ${isMe ? 'sent' : 'received'}`;
             
-            // Кнопка удаления (только для своих)
-            const deleteBtn = isMe ? `<button class="delete-msg" onclick="deleteMessage('${key}')">×</button>` : '';
+            const deleteBtn = canDelete ? `<button class="delete-msg" onclick="deleteMessage('${key}')">×</button>` : '';
             const userLabel = `<div style="font-size:10px; color:#aaa; margin-bottom:2px;">${msg.user || 'Аноним'}</div>`;
 
             div.innerHTML = `
@@ -276,6 +278,58 @@
             messagesDiv.appendChild(div);
         });
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    });
+
+    // Открытки (теперь с проверкой автора)
+    db.ref('postcards').on('value', (snapshot) => {
+        const grid = document.getElementById('postcardsGrid');
+        grid.innerHTML = '';
+        snapshot.forEach((child) => {
+            const data = child.val();
+            const key = child.key;
+            
+            // Поддержка старого формата (строка) и нового (объект)
+            const src = typeof data === 'object' ? data.src : data;
+            const user = typeof data === 'object' ? data.user : null;
+            
+            // Удалить может: Автор ИЛИ если автора нет (старая картинка)
+            const canDelete = (user === currentUser) || (!user);
+
+            const deleteBtn = canDelete ? `<button class="delete-card" onclick="deleteItem('postcards', '${key}')">🗑</button>` : '';
+            const authorLabel = user ? `<div class="author-label">${user}</div>` : '';
+
+            grid.innerHTML += `
+                <div class="postcard">
+                    <img src="${src}" onclick="alert('Открытка от ${user || 'Анонима'}')">
+                    ${deleteBtn}
+                    ${authorLabel}
+                </div>`;
+        });
+    });
+
+    // Галерея Стены (Новый раздел)
+    db.ref('wall_gallery').on('value', (snapshot) => {
+        const grid = document.getElementById('wallGalleryGrid');
+        grid.innerHTML = '';
+        if (!snapshot.exists()) {
+            grid.innerHTML = '<div style="color:#999; grid-column: 1/-1; text-align:center;">Здесь пока пусто. Нарисуйте что-нибудь и нажмите "Сохранить"!</div>';
+            return;
+        }
+        
+        snapshot.forEach((child) => {
+            const data = child.val();
+            const key = child.key;
+            
+            const isMine = data.user === currentUser;
+            const deleteBtn = isMine ? `<button class="delete-card" onclick="deleteItem('wall_gallery', '${key}')">🗑</button>` : '';
+
+            grid.innerHTML += `
+                <div class="postcard" style="transform: none; aspect-ratio: auto;">
+                    <img src="${data.src}">
+                    ${deleteBtn}
+                    <div class="author-label">${data.user}</div>
+                </div>`;
+        });
     });
 
     // Важные даты
@@ -318,28 +372,14 @@
         });
     });
 
-    // Открытки
-    db.ref('postcards').on('value', (snapshot) => {
-        const grid = document.getElementById('postcardsGrid');
-        grid.innerHTML = '';
-        snapshot.forEach((child) => {
-            const imgData = child.val();
-            grid.innerHTML += `<div class="postcard"><img src="${imgData}" onclick="alert('Это открытка!')"></div>`;
-        });
-    });
-
-    // Стена
+    // Стена (Рисование в реальном времени)
     let canvas = document.getElementById('drawingCanvas');
     let ctx = canvas.getContext('2d');
     
     function resizeCanvas() { 
         const parent = canvas.parentElement; 
         const rect = parent.getBoundingClientRect();
-        // Устанавливаем внутренний размер канваса равным видимому
-        if (canvas.width !== rect.width) {
-            canvas.width = rect.width;
-        }
-        // Высота фиксирована в CSS, но нужна и здесь
+        if (canvas.width !== rect.width) canvas.width = rect.width;
         if (canvas.height !== 400) canvas.height = 400;
     }
     window.addEventListener('resize', resizeCanvas);
@@ -350,6 +390,9 @@
             const img = new Image();
             img.onload = () => ctx.drawImage(img, 0, 0);
             img.src = dataUrl;
+        } else {
+            // Если базу очистили
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
     });
 
@@ -398,7 +441,7 @@
         if (text) {
             db.ref('chat').push({ 
                 text: text, 
-                user: currentUser, // Пишем имя вместо ID
+                user: currentUser, 
                 timestamp: Date.now() 
             });
             input.value = '';
@@ -431,25 +474,21 @@
         }
     }
 
-    function deleteItem(node, key) { if(confirm('Удалить?')) db.ref(node).child(key).remove(); }
+    // Универсальная функция удаления
+    function deleteItem(node, key) { 
+        if(confirm('Удалить этот элемент?')) db.ref(node).child(key).remove(); 
+    }
 
     // Рисование
     let isDrawing = false; let lastX = 0; let lastY = 0;
     
     function getPos(e) {
         const rect = canvas.getBoundingClientRect();
-        // Используем clientX/Y для точного позиционирования
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        
-        // Масштабирование координат, если CSS размер отличается от внутреннего
         const scaleX = canvas.width / rect.width;
         const scaleY = canvas.height / rect.height;
-
-        return { 
-            x: (clientX - rect.left) * scaleX, 
-            y: (clientY - rect.top) * scaleY 
-        };
+        return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
     }
 
     canvas.addEventListener('mousedown', startDraw);
@@ -474,24 +513,33 @@
     function stopDraw() {
         if (isDrawing) {
             isDrawing = false;
+            // Обновляем текущее состояние доски для всех
             db.ref('wall').set(canvas.toDataURL('image/png'));
         }
     }
     
     function clearCanvas() { 
-        if(confirm('Стереть рисунок?')) { 
+        if(confirm('Стереть всё с доски?')) { 
             ctx.clearRect(0,0, canvas.width, canvas.height); 
             db.ref('wall').set(null); 
         } 
     }
 
-    function saveCanvas() {
-        const link = document.createElement('a');
-        link.download = 'nasha-istoria-risunok.png';
-        link.href = canvas.toDataURL();
-        link.click();
+    // СОХРАНЕНИЕ РИСУНКА В ГАЛЕРЕЮ СТЕНЫ
+    function saveWallDrawing() {
+        if(confirm('Сохранить рисунок в галерею под доской?')) {
+            const dataUrl = canvas.toDataURL(); 
+            db.ref('wall_gallery').push({
+                src: dataUrl,
+                user: currentUser,
+                timestamp: Date.now()
+            }, (error) => {
+                if(!error) alert('Рисунок сохранен!');
+            });
+        }
     }
 
+    // ЗАГРУЗКА ОТКРЫТКИ
     function uploadPostcard(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -506,7 +554,13 @@
                 tempCanvas.width = width; tempCanvas.height = height;
                 const tCtx = tempCanvas.getContext('2d');
                 tCtx.drawImage(img, 0, 0, width, height);
-                db.ref('postcards').push(tempCanvas.toDataURL('image/jpeg', 0.7));
+                
+                // Сохраняем объект с автором
+                db.ref('postcards').push({
+                    src: tempCanvas.toDataURL('image/jpeg', 0.7),
+                    user: currentUser,
+                    timestamp: Date.now()
+                });
                 alert('Фото отправлено!');
             };
             img.src = e.target.result;
