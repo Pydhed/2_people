@@ -10,7 +10,6 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Наша История</title>
     
-    <!-- Подключаем Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
@@ -19,7 +18,20 @@
 
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background: linear-gradient(135deg, #f0f4f8 0%, #e8f1f7 100%); color: #1a1a1a; overflow-x: hidden; touch-action: manipulation; }
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; 
+            /* Фон с котиками и градиентом */
+            background-color: #f0f4f8;
+            background-image: 
+                url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M15 25 Q 15 10 25 18 L 30 18 L 35 18 Q 45 10 45 25 Q 50 35 30 45 Q 10 35 15 25 Z' fill='none' stroke='%232196F3' stroke-opacity='0.15' stroke-width='2'/%3E%3C/svg%3E"),
+                linear-gradient(135deg, #f0f4f8 0%, #e8f1f7 100%);
+            background-size: 60px 60px, cover;
+            color: #1a1a1a; 
+            overflow-x: hidden; 
+            touch-action: manipulation; 
+        }
+
         .container { display: flex; min-height: 100vh; }
         
         /* Sidebar (Desktop) */
@@ -71,16 +83,47 @@
         /* Wall */
         #drawingCanvas { border: 2px solid #d0dce7; border-radius: 12px; background: white; touch-action: none; width: 100%; max-width: 600px; margin: 0 auto; display: block; cursor: crosshair; }
         
-        /* Postcards */
-        .postcards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
-        .postcard { position: relative; aspect-ratio: 3/4; background: white; padding: 5px; box-shadow: 2px 2px 8px rgba(0,0,0,0.1); border-radius: 8px; overflow: hidden; }
-        .postcard img { width: 100%; height: 100%; object-fit: cover; border-radius: 4px; }
-        .delete-card { position: absolute; top: 5px; right: 5px; background: rgba(255, 68, 68, 0.9); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; }
-        .author-label { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,0.8); font-size: 10px; padding: 2px 5px; text-align: center; }
+        /* Postcards (Collage Style) */
+        .postcards-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); 
+            gap: 25px; /* Увеличили отступ для вращения */
+            padding: 10px;
+        }
+        
+        .postcard { 
+            position: relative; 
+            aspect-ratio: 3/4; 
+            background: white; 
+            padding: 0; /* Убрали внутренний паддинг, рамка через border */
+            box-shadow: 3px 3px 10px rgba(0,0,0,0.15); 
+            border-radius: 2px; 
+            overflow: visible; 
+            border: 6px solid white; /* Белая рамка как у фото */
+            border-bottom: 25px solid white; /* Поле для подписи снизу */
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.27);
+        }
+
+        .postcard img { width: 100%; height: 100%; object-fit: cover; border-radius: 0; }
+        
+        /* Эффект разбросанных фото */
+        .postcard:nth-child(odd) { transform: rotate(-3deg); }
+        .postcard:nth-child(even) { transform: rotate(2deg); }
+        .postcard:nth-child(3n) { transform: rotate(4deg); }
+        .postcard:nth-child(4n) { transform: rotate(-5deg); }
+
+        .postcard:hover {
+            transform: scale(1.05) rotate(0deg) !important;
+            z-index: 100;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        .delete-card { position: absolute; top: -15px; right: -15px; background: rgba(255, 68, 68, 1); color: white; border: none; border-radius: 50%; width: 26px; height: 26px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); z-index: 5; }
+        .author-label { position: absolute; bottom: -20px; left: 0; right: 0; color: #666; font-size: 11px; padding: 2px 5px; text-align: center; font-family: cursive; }
 
         /* Controls */
         .btn { padding: 10px 20px; background: #2196F3; color: white; border: none; border-radius: 6px; cursor: pointer; width: 100%; margin-top: 5px; }
-        input, select { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 6px; }
+        input, select { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 6px; background: white; }
         
         /* Bottom Nav */
         .bottom-nav { display: flex; position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid #eee; height: 60px; z-index: 1000; justify-content: space-around; align-items: center; }
@@ -95,14 +138,18 @@
 </head>
 <body>
 
-<!-- LOGIN SCREEN -->
 <div id="loginScreen">
     <h1 style="color: #2196F3; margin-bottom: 20px;">💕 Наша История</h1>
     <div style="width: 100%; max-width: 300px;">
-        <input type="text" id="loginUser" placeholder="Логин (kot / surikat)">
+        <label style="font-size: 12px; color: #666; margin-bottom: 4px; display: block;">Кто ты?</label>
+        <select id="loginUser">
+            <option value="surikat">Сурикат</option>
+            <option value="kot">Кот</option>
+        </select>
+        
         <input type="password" id="loginPass" placeholder="Пароль">
         <button class="btn" onclick="doLogin()">Войти</button>
-        <div id="loginError">Неверный логин или пароль</div>
+        <div id="loginError">Неверный пароль</div>
     </div>
 </div>
 
@@ -120,7 +167,6 @@
     </nav>
 
     <div class="main-content">
-        <!-- HOME -->
         <div class="screen active" id="home">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <div>
@@ -130,7 +176,6 @@
                 <button class="btn" style="width: auto; background: #ff4444; padding: 5px 12px; font-size: 13px;" onclick="doLogout()">Выйти</button>
             </div>
             
-            <!-- Counters -->
             <div class="timer-grid">
                 <div class="card">
                     <div class="card-value" id="daysDisplay">0</div>
@@ -150,14 +195,12 @@
                 </div>
             </div>
 
-            <!-- Birthdays -->
             <h2 style="font-size: 18px; margin: 24px 0 10px;">До Дня Рождения</h2>
             <div class="cards-grid">
                 <div class="card"><div class="card-value" id="daysToP1">...</div><div class="card-label">Сурикат (12.08)</div></div>
                 <div class="card"><div class="card-value" id="daysToP2">...</div><div class="card-label">Кот (18.03)</div></div>
             </div>
 
-            <!-- Important Dates -->
             <h2 style="font-size: 18px; margin: 24px 0 10px;">Важные даты</h2>
             <div style="background: white; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #e3f2fd;">
                 <input type="text" id="impName" placeholder="Название события">
@@ -166,7 +209,6 @@
             </div>
             <div class="cards-grid" id="importantDatesGrid"></div>
 
-            <!-- Goals -->
             <h2 style="font-size: 18px; margin: 24px 0 10px;">🎯 Цели</h2>
             <div style="background: white; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #e3f2fd;">
                 <input type="text" id="goalName" placeholder="Название цели">
@@ -176,7 +218,6 @@
             <div id="goalsList" style="display: flex; flex-direction: column; gap: 10px;"></div>
         </div>
 
-        <!-- CHAT -->
         <div class="screen" id="chat">
             <h1>💬 Чат</h1>
             <div class="chat-container">
@@ -188,7 +229,6 @@
             </div>
         </div>
 
-        <!-- WALL -->
         <div class="screen" id="wall">
             <h1>🎨 Рисуем вместе</h1>
             <canvas id="drawingCanvas" height="400"></canvas>
@@ -207,9 +247,8 @@
             <div id="wallGalleryGrid" class="postcards-grid"></div>
         </div>
 
-        <!-- POSTCARDS -->
         <div class="screen" id="postcards">
-            <h1>📮 Открытки</h1>
+            <h1>📮 Фото-коллаж</h1>
             <div style="margin-bottom: 20px;">
                 <label class="btn" style="display: block; text-align: center;">
                     📸 Загрузить фото
@@ -263,9 +302,13 @@
     }
 
     function doLogin() {
-        const u = document.getElementById('loginUser').value.toLowerCase().trim();
+        // Берем значение из SELECT, оно уже правильное (surikat или kot)
+        const u = document.getElementById('loginUser').value;
         const p = document.getElementById('loginPass').value.trim();
+        
         let role = null;
+        
+        // Пароль по-прежнему "kot" для обоих, либо можно изменить логику
         if (u === 'kot' && p.toLowerCase() === 'kot') role = 'Кот';
         if (u === 'surikat' && p.toLowerCase() === 'kot') role = 'Сурикат';
 
@@ -275,6 +318,7 @@
             checkAuth();
         } else {
             document.getElementById('loginError').style.display = 'block';
+            document.getElementById('loginError').innerText = "Неверный пароль";
         }
     }
     
@@ -362,7 +406,7 @@
             const deleteBtn = isMine ? `<button class="delete-card" onclick="deleteItem('wall_gallery', '${key}')">🗑</button>` : '';
 
             grid.innerHTML += `
-                <div class="postcard" style="transform: none; aspect-ratio: auto;">
+                <div class="postcard">
                     <img src="${data.src}">
                     ${deleteBtn}
                     <div class="author-label">${data.user}</div>
@@ -471,7 +515,6 @@
         let nextBday = new Date(today.getFullYear(), bday.getMonth(), bday.getDate());
         if (today > nextBday) nextBday.setFullYear(today.getFullYear() + 1);
         const daysLeft = Math.ceil((nextBday - today) / (1000 * 60 * 60 * 24));
-        // ДОБАВЛЕНО: ' дн.' в конце
         document.getElementById(elemId).innerText = daysLeft + ' дн.';
     }
 
